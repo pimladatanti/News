@@ -16,6 +16,7 @@
 
 package com.example.jetnews.ui.home
 
+import androidx.compose.foundation.rememberScrollState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -70,7 +71,8 @@ sealed interface HomeUiState {
         val favorites: Set<String>,
         override val isLoading: Boolean,
         override val errorMessages: List<ErrorMessage>,
-        override val searchInput: String
+        override val searchInput: String,
+        val isSearchOpen: Boolean,
     ) : HomeUiState
 }
 
@@ -84,6 +86,7 @@ private data class HomeViewModelState(
     val favorites: Set<String> = emptySet(),
     val isLoading: Boolean = false,
     val errorMessages: List<ErrorMessage> = emptyList(),
+    val isSearchOpen: Boolean = false,
     val searchInput: String = "",
 ) {
 
@@ -111,6 +114,7 @@ private data class HomeViewModelState(
                 favorites = favorites,
                 isLoading = isLoading,
                 errorMessages = errorMessages,
+                isSearchOpen = isSearchOpen,
                 searchInput = searchInput
             )
         }
@@ -169,6 +173,12 @@ class HomeViewModel(
         }
     }
 
+    fun toggleSearch() {
+        viewModelState.update { currentUiState ->
+            currentUiState.copy(isSearchOpen = !currentUiState.isSearchOpen)
+        }
+    }
+
     /**
      * Toggle favorite of a post
      */
@@ -223,6 +233,46 @@ class HomeViewModel(
     fun onSearchInputChanged(searchInput: String) {
         viewModelState.update {
             it.copy(searchInput = searchInput)
+        }
+    }
+
+    fun onSubmitSearch(searchInput: String) {
+        viewModelState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            val result = postsRepository.getFilteredPostsFeed(searchInput)
+            viewModelState.update {
+                when (result) {
+                    is Result.Success -> it.copy(postsFeed = result.data, isLoading = false)
+                    is Result.Error -> {
+                        val errorMessages = it.errorMessages + ErrorMessage(
+                            id = UUID.randomUUID().mostSignificantBits,
+                            messageId = R.string.load_error
+                        )
+                        it.copy(errorMessages = errorMessages, isLoading = false)
+                    }
+                }
+            }
+        }
+    }
+
+    fun filterFavorites() {
+        viewModelState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            val result = postsRepository.filterFavorites()
+            viewModelState.update {
+                when (result) {
+                    is Result.Success -> it.copy(postsFeed = result.data, isLoading = false)
+                    is Result.Error -> {
+                        val errorMessages = it.errorMessages + ErrorMessage(
+                            id = UUID.randomUUID().mostSignificantBits,
+                            messageId = R.string.load_error
+                        )
+                        it.copy(errorMessages = errorMessages, isLoading = false)
+                    }
+                }
+            }
         }
     }
 

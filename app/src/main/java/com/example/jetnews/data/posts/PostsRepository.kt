@@ -45,4 +45,11 @@ interface PostsRepository {
      * Toggle a postId to be a favorite or not.
      */
     suspend fun toggleFavorite(postId: String)
+
+    /*
+    * Get filtered posts feed
+     */
+    suspend fun getFilteredPostsFeed(searchInput: String): Result<PostsFeed>
+
+    suspend fun filterFavorites(): Result<PostsFeed>
 }

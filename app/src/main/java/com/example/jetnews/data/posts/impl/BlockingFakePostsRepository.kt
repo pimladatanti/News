@@ -59,4 +59,12 @@ class BlockingFakePostsRepository : PostsRepository {
         set.addOrRemove(postId)
         favorites.value = set
     }
+
+    override suspend fun getFilteredPostsFeed(searchInput: String): Result<PostsFeed> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun filterFavorites(): Result<PostsFeed> {
+        TODO("Not yet implemented")
+    }
 }
